@@ -18,15 +18,15 @@ const DUMMY_PRODUCTS = [
     description: 'Compact 65% mechanical keyboard with hot-swappable switches.',
     priceInCents: 25000000, // $250.000 COP
     stock: 15,
-    imageUrl: 'https://placehold.co/600x400/1a1a2e/ffffff/png?text=Mechanical+Keyboard',
+    imageUrl: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&h=400&q=80&fm=webp',
   },
   {
     id: 'prod-002',
     name: 'Noise Cancelling Headphones',
     description: 'Over-ear wireless headphones with active noise cancellation.',
     priceInCents: 45000000, // $450.000 COP
-    stock: 8,
-    imageUrl: 'https://placehold.co/600x400/2e2e4d/ffffff/png?text=Headphones',
+    stock: 3,
+    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&h=400&q=80&fm=webp',
   },
   {
     id: 'prod-003',
@@ -34,7 +34,7 @@ const DUMMY_PRODUCTS = [
     description: 'Ultra HD webcam with auto-focus, ideal for streaming.',
     priceInCents: 18000000, // $180.000 COP
     stock: 20,
-    imageUrl: 'https://placehold.co/600x400/1a1a2e/ffffff/png?text=4K+Webcam',
+    imageUrl: 'https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcQ1x385hg32wQw361NtEb3JJ0_kd6JNGjO44xwC1IaR5pXRbMB-Kos9UTyY5VdlXPJ0-XVvtPg5IKRLZjY',
   },
   {
     id: 'prod-004',
@@ -42,7 +42,7 @@ const DUMMY_PRODUCTS = [
     description: 'Compact waterproof speaker with 12-hour battery life.',
     priceInCents: 12000000, // $120.000 COP
     stock: 25,
-    imageUrl: 'https://placehold.co/600x400/2e2e4d/ffffff/png?text=Bluetooth+Speaker',
+    imageUrl: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=600&h=400&q=80&fm=webp',
   },
   {
     id: 'prod-005',
@@ -50,7 +50,7 @@ const DUMMY_PRODUCTS = [
     description: 'Fitness tracker with heart rate monitor and GPS.',
     priceInCents: 32000000, // $320.000 COP
     stock: 12,
-    imageUrl: 'https://placehold.co/600x400/1a1a2e/ffffff/png?text=Fitness+Watch',
+    imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&h=400&q=80&fm=webp',
   },
   {
     id: 'prod-006',
@@ -58,7 +58,7 @@ const DUMMY_PRODUCTS = [
     description: '7-in-1 USB-C hub with HDMI, SD card reader, and fast charging.',
     priceInCents: 9500000, // $95.000 COP
     stock: 30,
-    imageUrl: 'https://placehold.co/600x400/2e2e4d/ffffff/png?text=USB-C+Hub',
+    imageUrl: 'https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcSwKiyZbHdBd53FpFwZ1ba-D_RtlUxiO8-fcTIAPYO9NsSY-jbg5VgfEdE5-PxtywoWAGw0fmDwsN-YzIY',
   },
 ];
 
