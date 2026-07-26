@@ -84,6 +84,16 @@ export class Transaction {
     return this.props.gatewayTransactionId;
   }
 
+  get productAmountInCents(): number {
+    return this.props.productAmountInCents;
+  }
+  get baseFeeInCents(): number {
+    return this.props.baseFeeInCents;
+  }
+  get deliveryFeeInCents(): number {
+    return this.props.deliveryFeeInCents;
+  }
+
   get totalAmountInCents(): number {
     return (
       this.props.productAmountInCents +

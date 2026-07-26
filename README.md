@@ -313,5 +313,5 @@ src/
 
 ## Related Repositories
 
-- **Frontend (Vue 3 + Vuex checkout UI):** `<add-your-frontend-repo-url-here>`
-- **Infrastructure (AWS CDK):** `<add-your-infra-repo-url-here>`
+- **Frontend (Vue 3 + Vuex checkout UI):** https://github.com/johancamilo/checkout-fronten
+- **Infrastructure (AWS CDK):** https://github.com/johancamilo/checkout-infraestructure

@@ -27,8 +27,10 @@ export class TransactionsController {
     return {
       transactionId: transaction.id,
       status: transaction.status,
-      totalAmountInCents: transaction.totalAmountInCents,
+      productAmountInCents: transaction.productAmountInCents,
+      baseFeeInCents: transaction.baseFeeInCents,
       deliveryFeeInCents: delivery.feeInCents,
+      totalAmountInCents: transaction.totalAmountInCents,
     };
   }
 
@@ -43,6 +45,9 @@ export class TransactionsController {
       transactionId: transaction.id,
       productId: transaction.productId,
       status: transaction.status,
+      productAmountInCents: transaction.productAmountInCents,
+      baseFeeInCents: transaction.baseFeeInCents,
+      deliveryFeeInCents: transaction.deliveryFeeInCents,
       totalAmountInCents: transaction.totalAmountInCents,
     };
   }
@@ -60,6 +65,9 @@ export class TransactionsController {
     return {
       transactionId: transaction.id,
       status: transaction.status,
+      productAmountInCents: transaction.productAmountInCents,
+      baseFeeInCents: transaction.baseFeeInCents,
+      deliveryFeeInCents: transaction.deliveryFeeInCents,
       totalAmountInCents: transaction.totalAmountInCents,
     };
   }
