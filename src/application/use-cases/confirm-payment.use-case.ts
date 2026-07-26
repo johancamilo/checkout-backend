@@ -64,7 +64,7 @@ export class ConfirmPaymentUseCase {
     const chargeResult = await this.paymentGateway.charge({
       amountInCents: transaction.totalAmountInCents,
       currency: 'COP',
-      reference: transaction.id,
+      reference: `${transaction.id}-${Date.now()}`,
       customerEmail: customer.email,
       cardToken: tokenResult.value,
       card: input.card,

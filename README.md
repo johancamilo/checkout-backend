@@ -225,45 +225,73 @@ collection variables so the following requests can reuse it.
 npm run test        # unit tests
 npm run test:cov    # unit tests with coverage report
 ```
----------------------------------|---------|----------|---------|---------|-------------------
-File                             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
----------------------------------|---------|----------|---------|---------|-------------------
-All files                        |   99.15 |    96.77 |     100 |   99.12 |                   
- application/use-cases           |   97.56 |    88.23 |     100 |   97.43 |                   
-  confirm-payment.use-case.ts    |   97.82 |    91.66 |     100 |   97.72 | 89                
-  create-transaction.use-case.ts |   97.22 |       80 |     100 |   97.05 | 93                
- domain/entities                 |     100 |      100 |     100 |     100 |                   
-  customer.entity.ts             |     100 |      100 |     100 |     100 |                   
-  delivery.entity.ts             |     100 |      100 |     100 |     100 |                   
-  product.entity.ts              |     100 |      100 |     100 |     100 |                   
-  transaction.entity.ts          |     100 |      100 |     100 |     100 |                   
- domain/ports                    |     100 |      100 |     100 |     100 |                   
-  payment-gateway.port.ts        |     100 |      100 |     100 |     100 |                   
-  repositories.port.ts           |     100 |      100 |     100 |     100 |                   
- domain/shared                   |     100 |      100 |     100 |     100 |                   
-  result.ts                      |     100 |      100 |     100 |     100 |                   
- infrastructure/payment/gateway  |     100 |      100 |     100 |     100 |                   
-  payment-gateway.utils.ts       |     100 |      100 |     100 |     100 |                   
----------------------------------|---------|----------|---------|---------|-------------------
+-------------------------------------|---------|----------|---------|---------|-------------------
+File                                 | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------------------------|---------|----------|---------|---------|-------------------
+All files                            |   98.99 |    97.36 |     100 |   98.92 |                   
+ application/use-cases               |   98.11 |       90 |     100 |   97.95 |                   
+  confirm-payment.use-case.ts        |   97.82 |    91.66 |     100 |   97.72 | 89                
+  create-transaction.use-case.ts     |   97.22 |       80 |     100 |   97.05 | 93                
+  get-product.use-case.ts            |     100 |      100 |     100 |     100 |                   
+  get-transaction.use-case.ts        |     100 |      100 |     100 |     100 |                   
+ config                              |     100 |      100 |     100 |     100 |                   
+  app.config.ts                      |     100 |      100 |     100 |     100 |                   
+ domain/entities                     |     100 |      100 |     100 |     100 |                   
+  customer.entity.ts                 |     100 |      100 |     100 |     100 |                   
+  delivery.entity.ts                 |     100 |      100 |     100 |     100 |                   
+  product.entity.ts                  |     100 |      100 |     100 |     100 |                   
+  transaction.entity.ts              |     100 |      100 |     100 |     100 |                   
+ domain/ports                        |     100 |      100 |     100 |     100 |                   
+  payment-gateway.port.ts            |     100 |      100 |     100 |     100 |                   
+  repositories.port.ts               |     100 |      100 |     100 |     100 |                   
+ domain/shared                       |     100 |      100 |     100 |     100 |                   
+  result.ts                          |     100 |      100 |     100 |     100 |                   
+ infrastructure/http                 |     100 |      100 |     100 |     100 |                   
+  http-error.mapper.ts               |     100 |      100 |     100 |     100 |                   
+ infrastructure/http/controllers     |     100 |      100 |     100 |     100 |                   
+  products.controller.ts             |     100 |      100 |     100 |     100 |                   
+  transactions.controller.ts         |     100 |      100 |     100 |     100 |                   
+ infrastructure/http/dtos            |     100 |      100 |     100 |     100 |                   
+  confirm-payment.dto.ts             |     100 |      100 |     100 |     100 |                   
+  create-transaction.dto.ts          |     100 |      100 |     100 |     100 |                   
+ infrastructure/payment/gateway      |   96.34 |    94.73 |     100 |      96 |                   
+  payment-gateway.adapter.ts         |   95.77 |    94.11 |     100 |   95.45 | 144-145,165       
+  payment-gateway.utils.ts           |     100 |      100 |     100 |     100 |                   
+ infrastructure/persistence/dynamodb |     100 |      100 |     100 |     100 |                   
+  customer.repository.ts             |     100 |      100 |     100 |     100 |                   
+  delivery.repository.ts             |     100 |      100 |     100 |     100 |                   
+  product.repository.ts              |     100 |      100 |     100 |     100 |                   
+  transaction.repository.ts          |     100 |      100 |     100 |     100 |                   
+-------------------------------------|---------|----------|---------|---------|-------------------
 
-Target of **≥ 80%** across the board is comfortably exceeded. The two files
-with any uncovered branches are `confirm-payment.use-case.ts` (97.82%
-statements) and `create-transaction.use-case.ts` (97.22% statements) —
-untested lines correspond to defensive edge-case branches, not core flow.
+Target of **≥ 80%** across the board is comfortably exceeded — and, unlike an
+earlier version of this report, this one reflects **every file under `src/`**
+(`collectCoverageFrom` is set explicitly in `package.json`), not just the
+files a test happens to import transitively.
 
 What's covered:
 - Domain entities (`Product`, `Transaction` state machine, `Customer`,
   `Delivery`) — 100%
 - Domain ports and `Result<T, E>` — 100%
-- Use cases (`CreateTransactionUseCase`, `ConfirmPaymentUseCase`) via mocked
-  ports — no real DynamoDB or gateway calls in unit tests
+- All 4 use cases (`CreateTransactionUseCase`, `ConfirmPaymentUseCase`,
+  `GetProductUseCase`, `GetTransactionUseCase`) via mocked ports
+- Both HTTP controllers (`ProductsController`, `TransactionsController`),
+  asserting the DomainError → HTTP status mapping for each error branch
+- Both DTOs (`CreateTransactionDto`, `ConfirmPaymentDto`), exercising real
+  `class-validator` validation (valid payload, missing fields, invalid
+  email/card format, unknown top-level properties)
+- All 4 DynamoDB repository adapters, with a mocked `DynamoDBDocumentClient`
+  asserting the exact `GetCommand`/`PutCommand` sent and the corrupted-record
+  guard
+- `PaymentGatewayAdapter` (tokenization, charge incl. the PENDING-polling
+  branch, status lookup), with `axios` mocked — no real network call
+- `app.config.ts`, including the "missing required env var" failure path
 - Payment gateway utilities (integrity signature generation, card brand
   detection) — 100%
 
-> Note: the numbers above reflect Jest's default coverage collection (files
-> touched transitively by the test suites). Controllers, DTOs and DynamoDB
-> repository adapters are exercised indirectly through the use-case tests but
-> don't currently have dedicated unit tests of their own.
+Excluded from coverage collection (pure wiring/bootstrap, not meaningfully
+unit-testable): `main.ts`, `lambda.ts`, `app.module.ts` (DI wiring only),
+`create-tables.local.ts` and `seed.ts` (one-off local dev scripts).
 
 ---
 
@@ -324,5 +352,5 @@ src/
 
 ## Related Repositories
 
-- **Frontend (Vue 3 + Vuex checkout UI):** https://github.com/johancamilo/checkout-fronten
+- **Frontend (Vue 3 + Vuex checkout UI):** https://github.com/johancamilo/checkout-frontend
 - **Infrastructure (AWS CDK):** https://github.com/johancamilo/checkout-infraestructure
