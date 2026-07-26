@@ -209,8 +209,8 @@ cp .env.example .env
 A full request/response reference, including sample payloads, is available as
 importable Postman collections in this repo — no external account needed:
 
-- **Local** (`http://localhost:3000`): [`postman_collection/local.postman_collection.json`](./postman_collection/postman_collection_local.json)
-- **AWS (deployed)**: [`postman_collection/aws.postman_collection.json`](./postman_collection/postman_collection_aws.json)
+- **Local** (`http://localhost:3000`): [`postman_collection/postman_collection_local.json`](./postman_collection/postman_collection_local.json)
+- **AWS (deployed)**: [`postman_collection/postman_collection_aws.json`](./postman_collection/postman_collection_aws.json)
 
 To use them: open Postman → **Import** → select the file. Both collections
 already carry a `baseUrl` variable pointed at the right environment, and the
