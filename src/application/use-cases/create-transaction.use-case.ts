@@ -18,6 +18,21 @@ import {
 // Fixed base fee applied to every transaction, in cents (business rule).
 const BASE_FEE_IN_CENTS = 500000; // e.g. $5,000 COP flat fee
 
+// Fixed flat delivery fee, in cents (business rule). This MUST match the
+// DELIVERY_FEE_IN_CENTS constant the frontend uses to render the summary
+// (checkout-frontend/src/store/modules/checkout/actions.js) so what the
+// customer sees before paying matches what actually gets charged.
+//
+// The client also sends a `deliveryFeeInCents` value in the request body
+// (see CreateTransactionInput below) purely for backwards-compatible shape
+// validation — it is intentionally NOT used to compute the charge. Trusting
+// a client-supplied price for anything that affects the amount charged is a
+// classic tampering vector (a modified request could set it to 0). If this
+// ever needs to vary by city/region, replace this constant with a
+// server-side lookup keyed by `input.delivery.city`/`region` — never by
+// reading it back from the request.
+const DELIVERY_FEE_IN_CENTS = 800000; // e.g. $8,000 COP flat fee
+
 export interface CreateTransactionInput {
   productId: string;
   quantity: number;
@@ -33,7 +48,12 @@ export interface CreateTransactionInput {
     region: string;
     postalCode?: string;
   };
-  deliveryFeeInCents: number;
+  /**
+   * @deprecated advisory only — the actual charge always uses the server-side
+   * DELIVERY_FEE_IN_CENTS constant, never this value. Kept optional so
+   * existing/older clients that still send it don't break validation.
+   */
+  deliveryFeeInCents?: number;
 }
 
 export interface CreateTransactionOutput {
@@ -87,7 +107,7 @@ export class CreateTransactionUseCase {
       quantity: input.quantity,
       productAmountInCents: product.priceInCents * input.quantity,
       baseFeeInCents: BASE_FEE_IN_CENTS,
-      deliveryFeeInCents: input.deliveryFeeInCents,
+      deliveryFeeInCents: DELIVERY_FEE_IN_CENTS,
     });
     if (transactionResult.isFailure) {
       return Result.fail(transactionResult.error);
@@ -99,18 +119,23 @@ export class CreateTransactionUseCase {
       id: uuid(),
       transactionId: transaction.id,
       ...input.delivery,
-      feeInCents: input.deliveryFeeInCents,
+      feeInCents: DELIVERY_FEE_IN_CENTS,
     });
     if (deliveryResult.isFailure) {
       return Result.fail(deliveryResult.error);
     }
     const delivery = deliveryResult.value;
 
-    // 5. Persist everything. (In a real system this would be a transactional
-    //    write; DynamoDB supports TransactWriteItems for this if needed.)
-    await this.customerRepository.save(customer);
-    await this.transactionRepository.save(transaction);
-    await this.deliveryRepository.save(delivery);
+    // 5. Persist everything. These 3 writes are independent of each other's
+    //    results, so they run concurrently instead of one round trip after
+    //    another. (In a real system this would ideally also be a
+    //    transactional write; DynamoDB supports TransactWriteItems for that
+    //    if strict all-or-nothing atomicity across the 3 tables is needed.)
+    await Promise.all([
+      this.customerRepository.save(customer),
+      this.transactionRepository.save(transaction),
+      this.deliveryRepository.save(delivery),
+    ]);
 
     return Result.ok({ transaction, customer, delivery });
   }

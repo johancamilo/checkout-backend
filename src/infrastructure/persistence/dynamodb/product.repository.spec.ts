@@ -1,6 +1,8 @@
-import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { DynamoDBProductRepository } from './product.repository';
 import { Product } from '@domain/entities/product.entity';
+import { InsufficientStockPersistenceError } from '@domain/ports/repositories.port';
 import { AppConfig } from '@config/app.config';
 
 describe('DynamoDBProductRepository', () => {
@@ -92,6 +94,63 @@ describe('DynamoDBProductRepository', () => {
         TableName: 'Products',
         Item: product.toPrimitives(),
       });
+    });
+  });
+
+  describe('decreaseStock', () => {
+    it('sends an atomic conditional UpdateCommand and returns the updated product', async () => {
+      client.send.mockResolvedValue({
+        Attributes: {
+          id: 'prod-002',
+          name: 'Headphones',
+          description: 'Noise cancelling',
+          priceInCents: 45000000,
+          stock: 7,
+        },
+      });
+
+      const updated = await repository.decreaseStock('prod-002', 1);
+
+      const sentCommand = client.send.mock.calls[0][0];
+      expect(sentCommand).toBeInstanceOf(UpdateCommand);
+      expect(sentCommand.input).toEqual({
+        TableName: 'Products',
+        Key: { id: 'prod-002' },
+        UpdateExpression: 'SET stock = stock - :quantity',
+        ConditionExpression: 'attribute_exists(id) AND stock >= :quantity',
+        ExpressionAttributeValues: { ':quantity': 1 },
+        ReturnValues: 'ALL_NEW',
+      });
+      expect(updated).toBeInstanceOf(Product);
+      expect(updated.stock).toBe(7);
+    });
+
+    it('throws InsufficientStockPersistenceError when the condition fails (race lost, or product missing)', async () => {
+      client.send.mockRejectedValue(
+        new ConditionalCheckFailedException({ message: 'condition failed', $metadata: {} }),
+      );
+
+      await expect(repository.decreaseStock('prod-002', 5)).rejects.toThrow(
+        InsufficientStockPersistenceError,
+      );
+    });
+
+    it('rethrows unexpected errors as-is', async () => {
+      client.send.mockRejectedValue(new Error('DynamoDB is unavailable'));
+
+      await expect(repository.decreaseStock('prod-002', 1)).rejects.toThrow(
+        'DynamoDB is unavailable',
+      );
+    });
+
+    it('throws when the updated record is corrupted', async () => {
+      client.send.mockResolvedValue({
+        Attributes: { id: 'prod-002', name: '', description: '', priceInCents: -1, stock: -1 },
+      });
+
+      await expect(repository.decreaseStock('prod-002', 1)).rejects.toThrow(
+        /Corrupted product record/,
+      );
     });
   });
 });

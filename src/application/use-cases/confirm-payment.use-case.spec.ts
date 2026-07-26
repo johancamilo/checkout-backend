@@ -2,6 +2,7 @@ import { ConfirmPaymentUseCase } from '@application/use-cases/confirm-payment.us
 import { Result, DomainError } from '@domain/shared/result';
 import { Transaction, TransactionStatus } from '@domain/entities/transaction.entity';
 import { Product } from '@domain/entities/product.entity';
+import { InsufficientStockPersistenceError } from '@domain/ports/repositories.port';
 
 describe('ConfirmPaymentUseCase', () => {
   let transactionRepository: any;
@@ -40,7 +41,7 @@ describe('ConfirmPaymentUseCase', () => {
 
   beforeEach(() => {
     transactionRepository = { findById: jest.fn(), save: jest.fn() };
-    productRepository = { findById: jest.fn(), save: jest.fn() };
+    productRepository = { findById: jest.fn(), save: jest.fn(), decreaseStock: jest.fn() };
     customerRepository = { findById: jest.fn() };
     paymentGateway = { tokenizeCard: jest.fn(), charge: jest.fn() };
 
@@ -118,51 +119,58 @@ describe('ConfirmPaymentUseCase', () => {
     expect(saved.status).toBe(TransactionStatus.ERROR);
   });
 
-  it('fails when product no longer exists after an approved charge', async () => {
+  it('fails with infrastructure error when the product no longer exists or has no stock after an approved charge', async () => {
     transactionRepository.findById.mockResolvedValue(makePendingTransaction());
     customerRepository.findById.mockResolvedValue({ email: 'johan@example.com' });
     paymentGateway.tokenizeCard.mockResolvedValue(Result.ok('token-abc'));
     paymentGateway.charge.mockResolvedValue(
       Result.ok({ status: 'APPROVED', gatewayTransactionId: 'gw-1', rawStatus: 'APPROVED' }),
     );
-    productRepository.findById.mockResolvedValue(null);
-
-    const result = await useCase.execute({ transactionId: 'txn-1', card });
-
-    expect(result.isFailure).toBe(true);
-    expect(result.error.message).toContain('Product');
-  });
-
-  it('fails with infrastructure error when stock cannot be decreased after approval', async () => {
-    transactionRepository.findById.mockResolvedValue(makePendingTransaction());
-    customerRepository.findById.mockResolvedValue({ email: 'johan@example.com' });
-    paymentGateway.tokenizeCard.mockResolvedValue(Result.ok('token-abc'));
-    paymentGateway.charge.mockResolvedValue(
-      Result.ok({ status: 'APPROVED', gatewayTransactionId: 'gw-1', rawStatus: 'APPROVED' }),
+    // The atomic conditional decrement failed: either the product doesn't
+    // exist anymore, or another concurrent approved payment already took
+    // the remaining stock. DynamoDB's ConditionExpression can't distinguish
+    // between the two without an extra read, so both surface identically.
+    productRepository.decreaseStock.mockRejectedValue(
+      new InsufficientStockPersistenceError('product-1', 1),
     );
-    productRepository.findById.mockResolvedValue(makeProduct(0)); // no stock left
 
     const result = await useCase.execute({ transactionId: 'txn-1', card });
 
     expect(result.isFailure).toBe(true);
     expect(result.error.message).toContain('stock could not be decreased');
+    expect(productRepository.decreaseStock).toHaveBeenCalledWith('product-1', 1);
   });
 
-  it('succeeds and decreases stock when payment is approved', async () => {
+  it('propagates unexpected (non-stock) errors from decreaseStock instead of swallowing them', async () => {
     transactionRepository.findById.mockResolvedValue(makePendingTransaction());
     customerRepository.findById.mockResolvedValue({ email: 'johan@example.com' });
     paymentGateway.tokenizeCard.mockResolvedValue(Result.ok('token-abc'));
     paymentGateway.charge.mockResolvedValue(
       Result.ok({ status: 'APPROVED', gatewayTransactionId: 'gw-1', rawStatus: 'APPROVED' }),
     );
-    productRepository.findById.mockResolvedValue(makeProduct(5));
+    productRepository.decreaseStock.mockRejectedValue(new Error('DynamoDB is unavailable'));
+
+    await expect(useCase.execute({ transactionId: 'txn-1', card })).rejects.toThrow(
+      'DynamoDB is unavailable',
+    );
+  });
+
+  it('succeeds and atomically decreases stock when payment is approved', async () => {
+    transactionRepository.findById.mockResolvedValue(makePendingTransaction());
+    customerRepository.findById.mockResolvedValue({ email: 'johan@example.com' });
+    paymentGateway.tokenizeCard.mockResolvedValue(Result.ok('token-abc'));
+    paymentGateway.charge.mockResolvedValue(
+      Result.ok({ status: 'APPROVED', gatewayTransactionId: 'gw-1', rawStatus: 'APPROVED' }),
+    );
+    productRepository.decreaseStock.mockResolvedValue(makeProduct(4));
 
     const result = await useCase.execute({ transactionId: 'txn-1', card });
 
     expect(result.isSuccess).toBe(true);
     expect(result.value.status).toBe(TransactionStatus.APPROVED);
-    const savedProduct = productRepository.save.mock.calls[0][0] as Product;
-    expect(savedProduct.stock).toBe(4);
+    expect(productRepository.decreaseStock).toHaveBeenCalledWith('product-1', 1);
+    expect(productRepository.findById).not.toHaveBeenCalled();
+    expect(productRepository.save).not.toHaveBeenCalled();
   });
 
   it('succeeds without touching stock when payment is declined', async () => {
@@ -177,6 +185,6 @@ describe('ConfirmPaymentUseCase', () => {
 
     expect(result.isSuccess).toBe(true);
     expect(result.value.status).toBe(TransactionStatus.DECLINED);
-    expect(productRepository.findById).not.toHaveBeenCalled();
+    expect(productRepository.decreaseStock).not.toHaveBeenCalled();
   });
 });

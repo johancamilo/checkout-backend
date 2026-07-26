@@ -228,10 +228,10 @@ npm run test:cov    # unit tests with coverage report
 -------------------------------------|---------|----------|---------|---------|-------------------
 File                                 | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
 -------------------------------------|---------|----------|---------|---------|-------------------
-All files                            |   98.99 |    97.36 |     100 |   98.92 |                   
- application/use-cases               |   98.11 |       90 |     100 |   97.95 |                   
-  confirm-payment.use-case.ts        |   97.82 |    91.66 |     100 |   97.72 | 89                
-  create-transaction.use-case.ts     |   97.22 |       80 |     100 |   97.05 | 93                
+All files                            |   99.02 |    97.39 |     100 |   98.95 |                   
+ application/use-cases               |   98.05 |    89.47 |     100 |   97.89 |                   
+  confirm-payment.use-case.ts        |   97.72 |     90.9 |     100 |   97.61 | 90                
+  create-transaction.use-case.ts     |   97.14 |       80 |     100 |   96.96 | 113               
   get-product.use-case.ts            |     100 |      100 |     100 |     100 |                   
   get-transaction.use-case.ts        |     100 |      100 |     100 |     100 |                   
  config                              |     100 |      100 |     100 |     100 |                   

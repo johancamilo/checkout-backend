@@ -1,6 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { GetCommand, PutCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
-import { ProductRepository } from '@domain/ports/repositories.port';
+import {
+  GetCommand,
+  PutCommand,
+  UpdateCommand,
+  DynamoDBDocumentClient,
+} from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
+import { InsufficientStockPersistenceError, ProductRepository } from '@domain/ports/repositories.port';
 import { Product } from '@domain/entities/product.entity';
 import { AppConfig } from '@config/app.config';
 import { DYNAMODB_DOCUMENT_CLIENT } from './dynamodb-client.provider';
@@ -41,5 +47,45 @@ export class DynamoDBProductRepository implements ProductRepository {
     await this.client.send(
       new PutCommand({ TableName: this.tableName, Item: product.toPrimitives() }),
     );
+  }
+
+  /**
+   * Race-safe stock decrement: the subtraction and the "enough stock left"
+   * check both happen atomically inside DynamoDB via ConditionExpression,
+   * instead of this process reading the current stock, subtracting in
+   * memory, and overwriting the whole item (which would lose updates under
+   * concurrent checkouts for the same product).
+   */
+  async decreaseStock(productId: string, quantity: number): Promise<Product> {
+    try {
+      const result = await this.client.send(
+        new UpdateCommand({
+          TableName: this.tableName,
+          Key: { id: productId },
+          UpdateExpression: 'SET stock = stock - :quantity',
+          ConditionExpression: 'attribute_exists(id) AND stock >= :quantity',
+          ExpressionAttributeValues: { ':quantity': quantity },
+          ReturnValues: 'ALL_NEW',
+        }),
+      );
+      const item = result.Attributes!;
+      const updated = Product.create({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        priceInCents: item.priceInCents,
+        stock: item.stock,
+        imageUrl: item.imageUrl,
+      });
+      if (updated.isFailure) {
+        throw new Error(`Corrupted product record ${productId}: ${updated.error.message}`);
+      }
+      return updated.value;
+    } catch (error) {
+      if (error instanceof ConditionalCheckFailedException) {
+        throw new InsufficientStockPersistenceError(productId, quantity);
+      }
+      throw error;
+    }
   }
 }

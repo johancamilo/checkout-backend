@@ -62,6 +62,17 @@ describe('CreateTransactionUseCase', () => {
     expect(deliveryRepository.save).toHaveBeenCalledWith(result.value.delivery);
   });
 
+  it('ignores a client-supplied deliveryFeeInCents and always uses the fixed server-side fee', async () => {
+    productRepository.findById.mockResolvedValue(makeProduct());
+
+    // Simulate a tampered request trying to get free delivery.
+    const result = await useCase.execute({ ...validInput, deliveryFeeInCents: 0 });
+
+    expect(result.isSuccess).toBe(true);
+    expect(result.value.delivery.feeInCents).toBe(800000);
+    expect(result.value.transaction.deliveryFeeInCents).toBe(800000);
+  });
+
   it('fails when product does not exist', async () => {
     productRepository.findById.mockResolvedValue(null);
 

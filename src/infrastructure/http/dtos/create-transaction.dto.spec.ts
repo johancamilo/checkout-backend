@@ -41,6 +41,12 @@ describe('CreateTransactionDto', () => {
     expect(errors.some((e) => e.property === 'quantity')).toBe(true);
   });
 
+  it('passes validation when deliveryFeeInCents is omitted (advisory-only field)', async () => {
+    const { deliveryFeeInCents, ...payloadWithoutFee } = validPayload;
+    const errors = await validateDto(payloadWithoutFee);
+    expect(errors).toHaveLength(0);
+  });
+
   it('fails when deliveryFeeInCents is negative', async () => {
     const errors = await validateDto({ ...validPayload, deliveryFeeInCents: -1 });
     expect(errors.some((e) => e.property === 'deliveryFeeInCents')).toBe(true);

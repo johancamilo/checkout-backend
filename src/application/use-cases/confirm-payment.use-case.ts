@@ -8,6 +8,7 @@ import {
   TransactionRepository,
   CUSTOMER_REPOSITORY,
   CustomerRepository,
+  InsufficientStockPersistenceError,
 } from '@domain/ports/repositories.port';
 import {
   PAYMENT_GATEWAY,
@@ -64,7 +65,7 @@ export class ConfirmPaymentUseCase {
     const chargeResult = await this.paymentGateway.charge({
       amountInCents: transaction.totalAmountInCents,
       currency: 'COP',
-      reference: `${transaction.id}-${Date.now()}`,
+      reference: transaction.id,
       customerEmail: customer.email,
       cardToken: tokenResult.value,
       card: input.card,
@@ -92,26 +93,30 @@ export class ConfirmPaymentUseCase {
     await this.transactionRepository.save(updatedTransaction);
 
     // 5. If approved: decrease stock now (product "assigned" to the customer).
+    //    This goes straight through the repository's atomic conditional
+    //    decrement (no find-then-save round trip) so two concurrent approved
+    //    payments for the same product can never both succeed when only one
+    //    unit is left in stock.
     if (updatedTransaction.isApproved()) {
-      const product = await this.productRepository.findById(updatedTransaction.productId);
-      if (!product) {
-        return Result.fail(
-          DomainError.notFound(`Product ${updatedTransaction.productId} not found`),
+      try {
+        await this.productRepository.decreaseStock(
+          updatedTransaction.productId,
+          updatedTransaction.quantity,
         );
+      } catch (error) {
+        if (error instanceof InsufficientStockPersistenceError) {
+          // Payment already went through with the gateway but we ran out of
+          // stock in the meantime (or the product no longer exists). This is
+          // flagged as an infrastructure/ops concern (would trigger a refund
+          // flow in a real system) rather than silently failing.
+          return Result.fail(
+            DomainError.infrastructure(
+              `Payment approved but stock could not be decreased for product ${updatedTransaction.productId}: ${error.message}`,
+            ),
+          );
+        }
+        throw error;
       }
-      const decreasedResult = product.decreaseStock(updatedTransaction.quantity);
-      if (decreasedResult.isFailure) {
-        // Payment already went through with the gateway but we ran out of
-        // stock in the meantime. This is flagged as an infrastructure/ops
-        // concern (would trigger a refund flow in a real system) rather than
-        // silently failing.
-        return Result.fail(
-          DomainError.infrastructure(
-            `Payment approved but stock could not be decreased for product ${updatedTransaction.productId}: ${decreasedResult.error.message}`,
-          ),
-        );
-      }
-      await this.productRepository.save(decreasedResult.value);
     }
 
     return Result.ok(updatedTransaction);

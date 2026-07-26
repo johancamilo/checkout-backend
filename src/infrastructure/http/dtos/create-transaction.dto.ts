@@ -63,7 +63,13 @@ export class CreateTransactionDto {
   @Type(() => DeliveryDto)
   delivery!: DeliveryDto;
 
+  /**
+   * Advisory only — kept for backwards compatibility with existing clients.
+   * The actual amount charged always uses the server-side flat delivery
+   * fee, never this value.
+   */
+  @IsOptional()
   @IsInt()
   @Min(0)
-  deliveryFeeInCents!: number;
+  deliveryFeeInCents?: number;
 }
