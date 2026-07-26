@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "Product Checkout API",
+    "description": "Endpoints for the product checkout onboarding test (product, transactions, payments).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "productId", "value": "prod-001", "type": "string" },
+    { "key": "transactionId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Get product",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "{{productId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create transaction",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Auto-saves the returned transactionId into the collection variable",
+              "// so the next requests (confirm payment / get transaction) can use it.",
+              "if (pm.response.code === 201 || pm.response.code === 200) {",
+              "    const body = pm.response.json();",
+              "    if (body.transactionId) {",
+              "        pm.collectionVariables.set('transactionId', body.transactionId);",
+              "        console.log('Saved transactionId:', body.transactionId);",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"customer\": {\n    \"fullName\": \"Jane Doe\",\n    \"email\": \"jane@example.com\",\n    \"phoneNumber\": \"3001234567\",\n    \"documentNumber\": \"123456789\"\n  },\n  \"delivery\": {\n    \"addressLine\": \"Calle 123 #45-67\",\n    \"city\": \"Bogota\",\n    \"region\": \"Cundinamarca\"\n  },\n  \"deliveryFeeInCents\": 800000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/transactions",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Confirm payment (APPROVED test card)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"card\": {\n    \"number\": \"4242424242424242\",\n    \"cvc\": \"123\",\n    \"expMonth\": \"12\",\n    \"expYear\": \"29\",\n    \"cardHolder\": \"JANE DOE\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/transactions/{{transactionId}}/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions", "{{transactionId}}", "payments"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Confirm payment (DECLINED test card)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"card\": {\n    \"number\": \"4111111111111111\",\n    \"cvc\": \"123\",\n    \"expMonth\": \"12\",\n    \"expYear\": \"29\",\n    \"cardHolder\": \"JANE DOE\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/transactions/{{transactionId}}/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions", "{{transactionId}}", "payments"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get transaction status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/transactions/{{transactionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions", "{{transactionId}}"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
