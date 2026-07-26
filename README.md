@@ -225,15 +225,26 @@ collection variables so the following requests can reuse it.
 npm run test        # unit tests
 npm run test:cov    # unit tests with coverage report
 ```
-
-Current coverage (`npm run test:cov`, 94 tests across 8 suites, all passing):
-
-| Metric      | Coverage |
-|-------------|----------|
-| Statements  | 99.14%   |
-| Branch      | 96.77%   |
-| Functions   | 100%     |
-| Lines       | 99.11%   |
+---------------------------------|---------|----------|---------|---------|-------------------
+File                             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+---------------------------------|---------|----------|---------|---------|-------------------
+All files                        |   99.15 |    96.77 |     100 |   99.12 |                   
+ application/use-cases           |   97.56 |    88.23 |     100 |   97.43 |                   
+  confirm-payment.use-case.ts    |   97.82 |    91.66 |     100 |   97.72 | 89                
+  create-transaction.use-case.ts |   97.22 |       80 |     100 |   97.05 | 93                
+ domain/entities                 |     100 |      100 |     100 |     100 |                   
+  customer.entity.ts             |     100 |      100 |     100 |     100 |                   
+  delivery.entity.ts             |     100 |      100 |     100 |     100 |                   
+  product.entity.ts              |     100 |      100 |     100 |     100 |                   
+  transaction.entity.ts          |     100 |      100 |     100 |     100 |                   
+ domain/ports                    |     100 |      100 |     100 |     100 |                   
+  payment-gateway.port.ts        |     100 |      100 |     100 |     100 |                   
+  repositories.port.ts           |     100 |      100 |     100 |     100 |                   
+ domain/shared                   |     100 |      100 |     100 |     100 |                   
+  result.ts                      |     100 |      100 |     100 |     100 |                   
+ infrastructure/payment/gateway  |     100 |      100 |     100 |     100 |                   
+  payment-gateway.utils.ts       |     100 |      100 |     100 |     100 |                   
+---------------------------------|---------|----------|---------|---------|-------------------
 
 Target of **≥ 80%** across the board is comfortably exceeded. The two files
 with any uncovered branches are `confirm-payment.use-case.ts` (97.82%

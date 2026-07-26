@@ -11,6 +11,16 @@ describe('Transaction', () => {
     deliveryFeeInCents: 200000,
   };
 
+  describe('amount getters', () => {
+    it('exposes the individual amount components', () => {
+      const txn = Transaction.create(baseInput).value;
+
+      expect(txn.productAmountInCents).toBe(baseInput.productAmountInCents);
+      expect(txn.baseFeeInCents).toBe(baseInput.baseFeeInCents);
+      expect(txn.deliveryFeeInCents).toBe(baseInput.deliveryFeeInCents);
+    });
+  });
+
   describe('create', () => {
     it('creates a valid PENDING transaction', () => {
       const result = Transaction.create(baseInput);
